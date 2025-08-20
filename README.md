@@ -1,3 +1,5 @@
+## Bible Chat
+
 <p align="center">
     Bible Chat is a faith focused ai product built on the bones of vercel/ai-chat!
 </p>
