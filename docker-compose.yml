@@ -1,21 +1,4 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
-      - /app/node_modules
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bible-chat
-      REDIS_URL: redis://default:password@redis:6379
-    depends_on:
-      - postgres
-      - redis
-    command: npm run dev
-
   postgres:
     image: postgres:latest
     restart: always
@@ -36,6 +19,23 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bible-chat
+      REDIS_URL: redis://default:password@redis:6379
+    depends_on:
+      - postgres
+      - redis
+    command: npm run dev
 
 volumes:
   postgres_data:
