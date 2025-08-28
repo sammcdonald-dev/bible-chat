@@ -52,8 +52,8 @@ You will need to use the environment variables [defined in `.env.example`](.env.
 Once we have .env variables sorted these steps will successfully run our app locally
 
 ```bash
-npm install
-npm run dev
+docker-compose build
+docker-compose up
 ```
 
 Your app template should now be running on [localhost:3000](http://localhost:3000).
