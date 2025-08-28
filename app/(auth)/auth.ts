@@ -62,31 +62,31 @@ export const {
         return { ...user, type: 'regular' };
       },
     }),
-    Credentials({
-      id: 'guest',
-      credentials: {},
-      async authorize() {
-        const [guestUser] = await createGuestUser();
-        return { ...guestUser, type: 'guest' };
-      },
-    }),
+    // Credentials({
+    //   id: 'guest',
+    //   credentials: {},
+    //   async authorize() {
+    //     const [guestUser] = await createGuestUser();
+    //     return { ...guestUser, type: 'guest' };
+    //   },
+    // }),
   ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id as string;
-        token.type = user.type;
-      }
+  // callbacks: {
+  //   async jwt({ token, user }) {
+  //     if (user) {
+  //       token.id = user.id as string;
+  //       token.type = user.type;
+  //     }
 
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id;
-        session.user.type = token.type;
-      }
+  //     return token;
+  //   },
+  //   async session({ session, token }) {
+  //     if (session.user) {
+  //       session.user.id = token.id;
+  //       session.user.type = token.type;
+  //     }
 
-      return session;
-    },
-  },
+  //     return session;
+  //   },
+  // },
 });
