@@ -80,19 +80,19 @@ export const myProvider = (() => {
   const base = customProvider({
     languageModels: {
       'chat-model': wrapLanguageModel({
-        model: google.chat('gemini-1.5-pro'),
+        model: google.chat('gemini-2.5-flash'),
         middleware: [],
       }),
       'chat-model-reasoning': wrapLanguageModel({
-        model: google.chat('gemini-1.5-pro'),
+        model: google.chat('gemini-2.5-flash'),
         middleware: [],
       }),
       'title-model': wrapLanguageModel({
-        model: google.chat('gemini-1.5-pro'),
+        model: google.chat('gemini-2.5-flash'),
         middleware: [],
       }),
       'artifact-model': wrapLanguageModel({
-        model: google.chat('gemini-1.5-pro'),
+        model: google.chat('gemini-2.5-flash'),
         middleware: [],
       }),
     },
