@@ -1,9 +1,6 @@
-import {
-  customProvider,
-  extractReasoningMiddleware,
-  wrapLanguageModel,
-} from 'ai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// lib/ai/providers.ts
+import { customProvider, wrapLanguageModel } from 'ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import {
   artifactModel,
   chatModel,
@@ -12,45 +9,98 @@ import {
 } from './models.test';
 import { isTestEnvironment } from '../constants';
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+// Global quota state management
+let isQuotaExceeded = false;
+let quotaResetTime: number | null = null;
 
-export const myProvider = isTestEnvironment
-  ? customProvider({
+export function setQuotaExceeded() {
+  isQuotaExceeded = true;
+  // Reset after 1 hour (3600000 ms)
+  quotaResetTime = Date.now() + 3600000;
+  console.log('Quota exceeded. Locked for 1 hour.');
+}
+
+export function isQuotaAvailable(): boolean {
+  if (!isQuotaExceeded) return true;
+
+  if (quotaResetTime && Date.now() > quotaResetTime) {
+    isQuotaExceeded = false;
+    quotaResetTime = null;
+    console.log('Quota lock expired. Allowing new requests.');
+    return true;
+  }
+
+  return false;
+}
+
+export function getQuotaStatus() {
+  if (!isQuotaExceeded) return { available: true };
+
+  const timeLeft = quotaResetTime
+    ? Math.ceil((quotaResetTime - Date.now()) / 1000)
+    : 0;
+  return {
+    available: false,
+    timeLeftSeconds: timeLeft,
+    message: 'Quota exceeded. Please wait for reset or upgrade plan.',
+  };
+}
+
+// Define the allowed model IDs
+export type LanguageModelId =
+  | 'chat-model'
+  | 'chat-model-reasoning'
+  | 'title-model'
+  | 'artifact-model';
+
+// Test mode: use mock models
+// ... existing code ...
+export const myProvider = (() => {
+  if (isTestEnvironment) {
+    const base = customProvider({
       languageModels: {
         'chat-model': chatModel,
         'chat-model-reasoning': reasoningModel,
         'title-model': titleModel,
         'artifact-model': artifactModel,
       },
-    })
-  : customProvider({
-      languageModels: {
-        // Replace xai usage with Gemini
-        'chat-model': async (prompt: string) => {
-          const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-          const result = await model.generateContent(prompt);
-          return result.response.text();
-        },
-        'chat-model-reasoning': async (prompt: string) => {
-          const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-          const result = await model.generateContent(prompt);
-          // Optionally apply reasoning middleware here if needed
-          return result.response.text();
-        },
-        'title-model': async (prompt: string) => {
-          const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-          const result = await model.generateContent(prompt);
-          return result.response.text();
-        },
-        'artifact-model': async (prompt: string) => {
-          const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-          const result = await model.generateContent(prompt);
-          return result.response.text();
-        },
-      },
-      // Gemini does not support image generation yet, so remove or update imageModels accordingly
-      imageModels: {
-        // If Gemini supports image models in the future, add here
-      },
     });
+
+    return {
+      ...base,
+      languageModel: (id: LanguageModelId) => base.languageModel(id),
+    };
+  }
+
+  // ✅ Production mode with Gemini
+  const google = createGoogleGenerativeAI({
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+  });
+
+  const base = customProvider({
+    languageModels: {
+      'chat-model': wrapLanguageModel({
+        model: google.chat('gemini-1.5-pro'),
+        middleware: [],
+      }),
+      'chat-model-reasoning': wrapLanguageModel({
+        model: google.chat('gemini-1.5-pro'),
+        middleware: [],
+      }),
+      'title-model': wrapLanguageModel({
+        model: google.chat('gemini-1.5-pro'),
+        middleware: [],
+      }),
+      'artifact-model': wrapLanguageModel({
+        model: google.chat('gemini-1.5-pro'),
+        middleware: [],
+      }),
+    },
+    imageModels: {},
+  });
+
+  return {
+    ...base,
+    languageModel: (id: LanguageModelId) => base.languageModel(id),
+  };
+})();

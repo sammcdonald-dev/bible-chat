@@ -9,16 +9,13 @@ RUN apk add --no-cache python3 make g++ gcc && \
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=development
 
-# Install pnpm globally
-RUN npm install -g pnpm
-
 # Copy only package files first (for caching)
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --no-frozen-lockfile
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # Copy app source
 COPY . .
 
 EXPOSE 3000
 
-CMD ["pnpm", "dev"]
+CMD ["npm", "run", "dev"]

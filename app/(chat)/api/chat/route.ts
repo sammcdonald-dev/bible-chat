@@ -37,6 +37,37 @@ import { ChatSDKError } from '@/lib/errors';
 import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
+import type { LanguageModelId } from '@/lib/ai/providers';
+import {
+  isQuotaAvailable,
+  setQuotaExceeded,
+  getQuotaStatus,
+} from '@/lib/ai/providers';
+
+// Rate limiting cache
+const rateLimitCache = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_MINUTE = 10;
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const userLimit = rateLimitCache.get(userId);
+
+  if (!userLimit || now > userLimit.resetTime) {
+    rateLimitCache.set(userId, {
+      count: 1,
+      resetTime: now + RATE_LIMIT_WINDOW,
+    });
+    return true;
+  }
+
+  if (userLimit.count >= MAX_REQUESTS_PER_MINUTE) {
+    return false;
+  }
+
+  userLimit.count++;
+  return true;
+}
 
 export const maxDuration = 60;
 
@@ -60,6 +91,16 @@ export function getStreamContext() {
   }
 
   return globalStreamContext;
+}
+
+export async function GET(request: Request) {
+  // Return quota status
+  const quotaStatus = getQuotaStatus();
+
+  return Response.json({
+    quota: quotaStatus,
+    timestamp: new Date().toISOString(),
+  });
 }
 
 export async function POST(request: Request) {
@@ -91,7 +132,44 @@ export async function POST(request: Request) {
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
+    // Check if quota is available before proceeding
+    if (!isQuotaAvailable()) {
+      const quotaStatus = getQuotaStatus();
+      const timeLeft = quotaStatus.timeLeftSeconds || 0;
+
+      return new Response(
+        JSON.stringify({
+          error: 'API quota exceeded',
+          message: `You have exceeded your API quota. Please wait ${timeLeft} seconds before trying again.`,
+          quota: quotaStatus,
+          retryAfter: Math.ceil(timeLeft / 60),
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': timeLeft.toString(),
+          },
+        },
+      );
+    }
+
     const userType: UserType = session.user.type;
+
+    // Check rate limiting
+    if (!checkRateLimit(session.user.id)) {
+      return new Response(
+        JSON.stringify({
+          error: 'Rate limit exceeded',
+          message:
+            'Too many requests. Please wait a minute before trying again.',
+        }),
+        {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    }
 
     const messageCount = await getMessageCountByUserId({
       id: session.user.id,
@@ -152,7 +230,7 @@ export async function POST(request: Request) {
     const stream = createUIMessageStream({
       execute: ({ writer: dataStream }) => {
         const result = streamText({
-          model: myProvider.languageModel(selectedChatModel),
+          model: myProvider.languageModel(selectedChatModel as LanguageModelId),
           system: systemPrompt({ selectedChatModel, requestHints }),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
@@ -219,9 +297,45 @@ export async function POST(request: Request) {
       return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
     }
   } catch (error) {
+    console.error('Chat API error:', error);
+
     if (error instanceof ChatSDKError) {
       return error.toResponse();
     }
+
+    // Handle quota limit errors specifically
+    if (error instanceof Error && error.message.includes('quota')) {
+      // Set global quota state to prevent further API calls
+      setQuotaExceeded();
+
+      return new Response(
+        JSON.stringify({
+          error: 'API quota exceeded',
+          message:
+            'You have exceeded your API quota. Please wait for quota reset or upgrade your plan.',
+          retryAfter: '1 hour',
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': '3600',
+          },
+        },
+      );
+    }
+
+    // Handle other errors
+    return new Response(
+      JSON.stringify({
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
   }
 }
 

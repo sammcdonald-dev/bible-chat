@@ -32,14 +32,17 @@ services:
     volumes:
       - .:/app
       - /app/node_modules # 👈 avoid overwriting node_modules
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bible-chat
       REDIS_URL: redis://default:password@redis:6379
       NODE_ENV: development
+      GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY}
     depends_on:
       - postgres
       - redis
-    command: sh -c "pnpm run db:migrate && pnpm run dev"
+    command: sh -c "npm run db:migrate && npm run dev"
 
 volumes:
   postgres_data:

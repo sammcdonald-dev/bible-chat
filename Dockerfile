@@ -6,8 +6,8 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++ gcc && \
     ln -sf python3 /usr/bin/python
 
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # Stage 2: Build the Next.js app
 FROM node:20-alpine AS builder
@@ -21,7 +21,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
 # Build Next.js
-RUN pnpm build
+RUN npm run build
 
 # Stage 3: Runtime image
 FROM node:20-alpine AS runner
@@ -46,4 +46,4 @@ USER nextjs
 
 EXPOSE 3000
 
-CMD ["pnpm", "start"]
+CMD ["npm", "start"]

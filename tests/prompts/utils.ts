@@ -177,11 +177,12 @@ export const getResponseChunksByPrompt = (
         toolCallId: toolCallId,
         type: 'tool-result',
         toolName: 'createDocument',
-        result: {
-          id: 'doc_123',
-          title: 'Essay about Silicon Valley',
-          kind: 'text',
-        },
+        content: [
+          {
+            type: 'text',
+            text: 'I created a document about Silicon Valley for you!',
+          },
+        ],
       },
       {
         type: 'finish',
@@ -254,5 +255,13 @@ As we move forward, Silicon Valley continues to reinvent itself. While some pred
     ];
   }
 
-  return [{ id: '6', type: 'text-delta', delta: 'Unknown test prompt!' }];
+  // Default fallback response for any message that doesn't match test patterns
+  return [
+    ...textToDeltas("Hello! I'm in test mode. This is a simulated response."),
+    {
+      type: 'finish',
+      finishReason: 'stop',
+      usage: { inputTokens: 3, outputTokens: 10, totalTokens: 13 },
+    },
+  ];
 };
