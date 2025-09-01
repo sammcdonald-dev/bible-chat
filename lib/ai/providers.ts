@@ -9,43 +9,6 @@ import {
 } from './models.test';
 import { isTestEnvironment } from '../constants';
 
-// Global quota state management
-let isQuotaExceeded = false;
-let quotaResetTime: number | null = null;
-
-export function setQuotaExceeded() {
-  isQuotaExceeded = true;
-  // Reset after 1 hour (3600000 ms)
-  quotaResetTime = Date.now() + 3600000;
-  console.log('Quota exceeded. Locked for 1 hour.');
-}
-
-export function isQuotaAvailable(): boolean {
-  if (!isQuotaExceeded) return true;
-
-  if (quotaResetTime && Date.now() > quotaResetTime) {
-    isQuotaExceeded = false;
-    quotaResetTime = null;
-    console.log('Quota lock expired. Allowing new requests.');
-    return true;
-  }
-
-  return false;
-}
-
-export function getQuotaStatus() {
-  if (!isQuotaExceeded) return { available: true };
-
-  const timeLeft = quotaResetTime
-    ? Math.ceil((quotaResetTime - Date.now()) / 1000)
-    : 0;
-  return {
-    available: false,
-    timeLeftSeconds: timeLeft,
-    message: 'Quota exceeded. Please wait for reset or upgrade plan.',
-  };
-}
-
 // Define the allowed model IDs
 export type LanguageModelId =
   | 'chat-model'

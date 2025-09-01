@@ -38,11 +38,6 @@ import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
 import type { LanguageModelId } from '@/lib/ai/providers';
-import {
-  isQuotaAvailable,
-  setQuotaExceeded,
-  getQuotaStatus,
-} from '@/lib/ai/providers';
 
 // Rate limiting cache
 const rateLimitCache = new Map<string, { count: number; resetTime: number }>();
@@ -93,16 +88,6 @@ export function getStreamContext() {
   return globalStreamContext;
 }
 
-export async function GET(request: Request) {
-  // Return quota status
-  const quotaStatus = getQuotaStatus();
-
-  return Response.json({
-    quota: quotaStatus,
-    timestamp: new Date().toISOString(),
-  });
-}
-
 export async function POST(request: Request) {
   let requestBody: PostRequestBody;
 
@@ -130,28 +115,6 @@ export async function POST(request: Request) {
 
     if (!session?.user) {
       return new ChatSDKError('unauthorized:chat').toResponse();
-    }
-
-    // Check if quota is available before proceeding
-    if (!isQuotaAvailable()) {
-      const quotaStatus = getQuotaStatus();
-      const timeLeft = quotaStatus.timeLeftSeconds || 0;
-
-      return new Response(
-        JSON.stringify({
-          error: 'API quota exceeded',
-          message: `You have exceeded your API quota. Please wait ${timeLeft} seconds before trying again.`,
-          quota: quotaStatus,
-          retryAfter: Math.ceil(timeLeft / 60),
-        }),
-        {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Retry-After': timeLeft.toString(),
-          },
-        },
-      );
     }
 
     const userType: UserType = session.user.type;
@@ -301,28 +264,6 @@ export async function POST(request: Request) {
 
     if (error instanceof ChatSDKError) {
       return error.toResponse();
-    }
-
-    // Handle quota limit errors specifically
-    if (error instanceof Error && error.message.includes('quota')) {
-      // Set global quota state to prevent further API calls
-      setQuotaExceeded();
-
-      return new Response(
-        JSON.stringify({
-          error: 'API quota exceeded',
-          message:
-            'You have exceeded your API quota. Please wait for quota reset or upgrade your plan.',
-          retryAfter: '1 hour',
-        }),
-        {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Retry-After': '3600',
-          },
-        },
-      );
     }
 
     // Handle other errors
