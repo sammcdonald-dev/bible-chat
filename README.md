@@ -43,13 +43,14 @@ You will need to use the environment variables [defined in `.env.example`](.env.
 
 ## We will be getting our own environement variables so we can run this separate from Vercel upon launch
 
-## feel free to ignore these steps and do the steps below instead
+1. Create a .env file
 
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
-3. Download your environment variables: `vercel env pull`
+2. Copy over .env.example to your .env (which won't be committed to github)
+
+3. go to get auth secret key, and google ai key from the links
 
 Once we have .env variables sorted these steps will successfully run our app locally
+If this doesn't work try to `npm install` before running docker
 
 ```bash
 docker-compose build
