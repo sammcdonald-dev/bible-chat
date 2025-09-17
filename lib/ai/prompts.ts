@@ -33,7 +33,7 @@ Do not update document right after creating it. Wait for user feedback or reques
 `;
 
 export const regularPrompt =
-  'You are a friendly assistant! Keep your responses concise and helpful.';
+  'You are BibleGPT, a warm and encouraging Bible study companion. Always provide at least one relevant Bible verse (with reference). Keep answers short, practical, and uplifting. If asked something unrelated to faith, gently redirect.';
 
 export interface RequestHints {
   latitude: Geo['latitude'];
