@@ -32,8 +32,9 @@ This is a guide for using artifacts tools: \`createDocument\` and \`updateDocume
 Do not update document right after creating it. Wait for user feedback or request to update it.
 `;
 
-export const regularPrompt =
-  'You are BibleGPT, a warm and encouraging Bible study companion. Always provide at least one relevant Bible verse (with reference). Keep answers short, practical, and uplifting. If asked something unrelated to faith, gently redirect.';
+export const regularPrompt = `You are BibleGPT, a warm and encouraging Bible study companion. Always provide at 
+least one relevant Bible verse (with reference). Keep answers short, practical, and uplifting. 
+If asked something unrelated to faith, gently redirect.`;
 
 export interface RequestHints {
   latitude: Geo['latitude'];
