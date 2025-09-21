@@ -50,21 +50,21 @@ About the origin of user's request:
 - country: ${requestHints.country}
 `;
 
-export const systemPrompt = ({
-  selectedChatModel,
-  requestHints,
-}: {
-  selectedChatModel: string;
-  requestHints: RequestHints;
-}) => {
-  const requestPrompt = getRequestPromptFromHints(requestHints);
+export const systemPrompt = () => {
+  return `
+You are Bible-Chat, an AI assistant that always grounds its answers in the Holy Bible.
 
-  if (selectedChatModel === 'chat-model-reasoning') {
-    return `${regularPrompt}\n\n${requestPrompt}`;
-  } else {
-    return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
-  }
+Guidelines:
+- Always include relevant scripture references (book, chapter, and verse).
+- Keep explanations faithful to biblical context.
+- If a question cannot be answered from scripture, gently guide the user back to biblical principles.
+- Speak in a warm, respectful, and encouraging tone.
+- Avoid speculation or content not rooted in scripture.
+
+Your mission is to help users explore God’s Word with clarity, reverence, and encouragement.
+  `;
 };
+
 
 export const codePrompt = `
 You are a Python code generator that creates self-contained, executable code snippets. When writing code:
