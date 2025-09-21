@@ -8,6 +8,7 @@ import {
   titleModel,
 } from './models.test';
 import { isTestEnvironment } from '../constants';
+import { middleware } from '../../middleware';
 
 // Define the allowed model IDs
 export type LanguageModelId =
