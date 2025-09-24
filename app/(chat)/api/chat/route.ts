@@ -56,8 +56,22 @@ function guardrailFilterStream(): TransformStream {
     transform(chunk, controller) {
       const text = chunk?.content ?? "";
 
-      // Example guardrail: block off-topic or unsafe outputs
-      if (text.toLowerCase().includes("violence")) {
+      // Block unsafe or inappropriate content
+      const lowerText = text.toLowerCase();
+
+      // Basic guardrails for now - can expand how we do this later
+      if (lowerText.includes("violence") ||
+        lowerText.includes("hate") ||
+        lowerText.includes("sex") ||
+        lowerText.includes("drugs") ||
+        lowerText.includes("self-harm") ||
+        lowerText.includes("suicide") ||
+        lowerText.includes("abuse") ||
+        lowerText.includes("explicit") ||
+        lowerText.includes("racist") ||
+        lowerText.includes("bully") ||
+        lowerText.includes("harass")
+      ) {
         controller.enqueue({
           ...chunk,
           content: "⚠️ Response blocked due to unsafe content.",
