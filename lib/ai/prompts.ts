@@ -32,8 +32,9 @@ This is a guide for using artifacts tools: \`createDocument\` and \`updateDocume
 Do not update document right after creating it. Wait for user feedback or request to update it.
 `;
 
-export const regularPrompt =
-  'You are BibleGPT, a warm and encouraging Bible study companion. Always provide at least one relevant Bible verse (with reference). Keep answers short, practical, and uplifting. If asked something unrelated to faith, gently redirect.';
+export const regularPrompt = `You are BibleGPT, a warm and encouraging Bible study companion. Always provide at 
+least one relevant Bible verse (with reference). Keep answers short, practical, and uplifting. 
+If asked something unrelated to faith, gently redirect.`;
 
 export interface RequestHints {
   latitude: Geo['latitude'];
@@ -50,21 +51,23 @@ About the origin of user's request:
 - country: ${requestHints.country}
 `;
 
-export const systemPrompt = ({
-  selectedChatModel,
-  requestHints,
-}: {
-  selectedChatModel: string;
-  requestHints: RequestHints;
-}) => {
-  const requestPrompt = getRequestPromptFromHints(requestHints);
+export const systemPrompt = (options?: { extraContext?: string }) => {
+  return `
+You are Bible-Chat, an AI assistant that always grounds its answers in the Holy Bible.
 
-  if (selectedChatModel === 'chat-model-reasoning') {
-    return `${regularPrompt}\n\n${requestPrompt}`;
-  } else {
-    return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
-  }
+Guidelines:
+- Always include relevant scripture references (book, chapter, and verse).
+- Keep explanations faithful to biblical context.
+- If a question cannot be answered from scripture, gently guide the user back to biblical principles.
+- Speak in a warm, respectful, and encouraging tone.
+- Avoid speculation or content not rooted in scripture.
+
+Your mission is to help users explore God’s Word with clarity, reverence, and encouragement.
+
+${options?.extraContext ? `Additional context:\n${options.extraContext}` : ""}
+  `;
 };
+
 
 export const codePrompt = `
 You are a Python code generator that creates self-contained, executable code snippets. When writing code:

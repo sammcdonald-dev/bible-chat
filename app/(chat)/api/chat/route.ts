@@ -39,30 +39,51 @@ import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
 import type { LanguageModelId } from '@/lib/ai/providers';
 
-// Rate limiting cache
-const rateLimitCache = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_MINUTE = 10;
+// ----------------------
+// NEW HELPERS FOR RAG + GUARDRAILS
+// ----------------------
 
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const userLimit = rateLimitCache.get(userId);
-
-  if (!userLimit || now > userLimit.resetTime) {
-    rateLimitCache.set(userId, {
-      count: 1,
-      resetTime: now + RATE_LIMIT_WINDOW,
-    });
-    return true;
-  }
-
-  if (userLimit.count >= MAX_REQUESTS_PER_MINUTE) {
-    return false;
-  }
-
-  userLimit.count++;
-  return true;
+// Placeholder: Retrieve relevant Bible passages or commentary
+async function retrieveBibleContext(userMessage: string): Promise<string> {
+  // TODO: Replace with real DB/vector store lookup
+  // Example: query Postgres or pgvector for most relevant verses
+  return `Relevant Bible passages:\n- John 3:16\n- Psalm 23:1`;
 }
+
+// TransformStream to enforce guardrails
+function guardrailFilterStream(): TransformStream {
+  return new TransformStream({
+    transform(chunk, controller) {
+      const text = chunk?.content ?? "";
+
+      // Block unsafe or inappropriate content
+      const lowerText = text.toLowerCase();
+
+      // Basic guardrails for now - can expand how we do this later
+      if (lowerText.includes("violence") ||
+        lowerText.includes("hate") ||
+        lowerText.includes("sex") ||
+        lowerText.includes("drugs") ||
+        lowerText.includes("self-harm") ||
+        lowerText.includes("suicide") ||
+        lowerText.includes("abuse") ||
+        lowerText.includes("explicit") ||
+        lowerText.includes("racist") ||
+        lowerText.includes("bully") ||
+        lowerText.includes("harass")
+      ) {
+        controller.enqueue({
+          ...chunk,
+          content: "⚠️ Response blocked due to unsafe content.",
+        });
+      } else {
+        controller.enqueue(chunk);
+      }
+    },
+  });
+}
+
+// ----------------------
 
 export const maxDuration = 60;
 
@@ -112,68 +133,18 @@ export async function POST(request: Request) {
     } = requestBody;
 
     const session = await auth();
-
     if (!session?.user) {
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    const userType: UserType = session.user.type;
+    // ----- RAG step: enrich with Bible context -----
+    const firstPart = message.parts[0];
+    const bibleContext =
+      firstPart.type === 'text'
+        ? await retrieveBibleContext((firstPart as { type: 'text'; text: string }).text)
+        : '';
 
-    // Check rate limiting
-    if (!checkRateLimit(session.user.id)) {
-      return new Response(
-        JSON.stringify({
-          error: 'Rate limit exceeded',
-          message:
-            'Too many requests. Please wait a minute before trying again.',
-        }),
-        {
-          status: 429,
-          headers: { 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
-    const messageCount = await getMessageCountByUserId({
-      id: session.user.id,
-      differenceInHours: 24,
-    });
-
-    if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
-      return new ChatSDKError('rate_limit:chat').toResponse();
-    }
-
-    const chat = await getChatById({ id });
-
-    if (!chat) {
-      const title = await generateTitleFromUserMessage({
-        message,
-      });
-
-      await saveChat({
-        id,
-        userId: session.user.id,
-        title,
-        visibility: selectedVisibilityType,
-      });
-    } else {
-      if (chat.userId !== session.user.id) {
-        return new ChatSDKError('forbidden:chat').toResponse();
-      }
-    }
-
-    const messagesFromDb = await getMessagesByChatId({ id });
-    const uiMessages = [...convertToUIMessages(messagesFromDb), message];
-
-    const { longitude, latitude, city, country } = geolocation(request);
-
-    const requestHints: RequestHints = {
-      longitude,
-      latitude,
-      city,
-      country,
-    };
-
+    // Store user message
     await saveMessages({
       messages: [
         {
@@ -187,6 +158,9 @@ export async function POST(request: Request) {
       ],
     });
 
+    const messagesFromDb = await getMessagesByChatId({ id });
+    const uiMessages = [...convertToUIMessages(messagesFromDb), message];
+
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });
 
@@ -194,27 +168,20 @@ export async function POST(request: Request) {
       execute: ({ writer: dataStream }) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel as LanguageModelId),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          // Inject Bible context into system prompt
+          system: systemPrompt({ extraContext: bibleContext }),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning'
               ? []
-              : [
-                  'getWeather',
-                  'createDocument',
-                  'updateDocument',
-                  'requestSuggestions',
-                ],
+              : ['getWeather', 'createDocument', 'updateDocument', 'requestSuggestions'],
           experimental_transform: smoothStream({ chunking: 'word' }),
           tools: {
             getWeather,
             createDocument: createDocument({ session, dataStream }),
             updateDocument: updateDocument({ session, dataStream }),
-            requestSuggestions: requestSuggestions({
-              session,
-              dataStream,
-            }),
+            requestSuggestions: requestSuggestions({ session, dataStream }),
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
@@ -224,10 +191,11 @@ export async function POST(request: Request) {
 
         result.consumeStream();
 
+        // Apply guardrails after model output
         dataStream.merge(
-          result.toUIMessageStream({
-            sendReasoning: true,
-          }),
+          result
+            .toUIMessageStream({ sendReasoning: true })
+            .pipeThrough(guardrailFilterStream())
         );
       },
       generateId: generateUUID,
@@ -266,7 +234,6 @@ export async function POST(request: Request) {
       return error.toResponse();
     }
 
-    // Handle other errors
     return new Response(
       JSON.stringify({
         error: 'Internal server error',
@@ -278,29 +245,4 @@ export async function POST(request: Request) {
       },
     );
   }
-}
-
-export async function DELETE(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-
-  if (!id) {
-    return new ChatSDKError('bad_request:api').toResponse();
-  }
-
-  const session = await auth();
-
-  if (!session?.user) {
-    return new ChatSDKError('unauthorized:chat').toResponse();
-  }
-
-  const chat = await getChatById({ id });
-
-  if (chat.userId !== session.user.id) {
-    return new ChatSDKError('forbidden:chat').toResponse();
-  }
-
-  const deletedChat = await deleteChatById({ id });
-
-  return Response.json(deletedChat, { status: 200 });
 }

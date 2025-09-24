@@ -39,6 +39,11 @@ This template ships with [Gemini](https://gemini.google.com/app) as the default 
 
 You will need to use the environment variables [defined in `.env.example`](.env.example) to run Next.js AI Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
 
+### Prerequisites
+
+* Docker and Docker Compose installed
+* Node.js and npm
+
 > Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
 
 ## We will be getting our own environement variables so we can run this separate from Vercel upon launch
