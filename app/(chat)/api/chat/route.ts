@@ -139,6 +139,7 @@ export async function POST(request: Request) {
     } = requestBody;
 
     const session = await auth();
+
     if (!session?.user) {
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
@@ -183,6 +184,9 @@ export async function POST(request: Request) {
       }
     }
 
+    const messagesFromDb = await getMessagesByChatId({ id });
+    const uiMessages = [...convertToUIMessages(messagesFromDb), message];
+
     const { longitude, latitude, city, country } = geolocation(request);
 
     const requestHints: RequestHints = {
@@ -206,9 +210,6 @@ export async function POST(request: Request) {
       ],
     });
 
-    const messagesFromDb = await getMessagesByChatId({ id });
-    const uiMessages = [...convertToUIMessages(messagesFromDb), message];
-
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });
 
@@ -216,8 +217,7 @@ export async function POST(request: Request) {
       execute: ({ writer: dataStream }) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel as LanguageModelId),
-          // Inject Bible context into system prompt
-          system: systemPrompt({ extraContext: bibleContext }),
+          system: systemPrompt(),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
@@ -234,7 +234,10 @@ export async function POST(request: Request) {
             getWeather,
             createDocument: createDocument({ session, dataStream }),
             updateDocument: updateDocument({ session, dataStream }),
-            requestSuggestions: requestSuggestions({ session, dataStream }),
+            requestSuggestions: requestSuggestions({
+              session,
+              dataStream,
+            }),
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
@@ -244,7 +247,6 @@ export async function POST(request: Request) {
 
         result.consumeStream();
 
-        // Apply guardrails after model output
         dataStream.merge(
           result
             .toUIMessageStream({ sendReasoning: true })
@@ -287,6 +289,7 @@ export async function POST(request: Request) {
       return error.toResponse();
     }
 
+    // Handle other errors
     return new Response(
       JSON.stringify({
         error: 'Internal server error',
