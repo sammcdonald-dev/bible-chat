@@ -51,7 +51,7 @@ About the origin of user's request:
 - country: ${requestHints.country}
 `;
 
-export const systemPrompt = (options?: { extraContext?: string }) => {
+export const systemPrompt = () => {
   return `
 You are Bible-Chat, an AI assistant that always grounds its answers in the Holy Bible.
 
@@ -63,8 +63,6 @@ Guidelines:
 - Avoid speculation or content not rooted in scripture.
 
 Your mission is to help users explore God’s Word with clarity, reverence, and encouragement.
-
-${options?.extraContext ? `Additional context:\n${options.extraContext}` : ""}
   `;
 };
 
