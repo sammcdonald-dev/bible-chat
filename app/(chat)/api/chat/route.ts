@@ -39,16 +39,11 @@ import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
 import type { LanguageModelId } from '@/lib/ai/providers';
 
-// ----------------------
-// NEW HELPERS FOR RAG + GUARDRAILS
-// ----------------------
+// Rate limiting cache
+const rateLimitCache = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_MINUTE = 10;
 
-// Placeholder: Retrieve relevant Bible passages or commentary
-async function retrieveBibleContext(userMessage: string): Promise<string> {
-  // TODO: Replace with real DB/vector store lookup
-  // Example: query Postgres or pgvector for most relevant verses
-  return `Relevant Bible passages:\n- John 3:16\n- Psalm 23:1`;
-}
 
 // TransformStream to enforce guardrails
 function guardrailFilterStream(): TransformStream {
@@ -89,7 +84,6 @@ function guardrailFilterStream(): TransformStream {
   });
 }
 
-// ----------------------
 
 export const maxDuration = 60;
 
