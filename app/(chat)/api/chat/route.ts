@@ -39,31 +39,51 @@ import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
 import type { LanguageModelId } from '@/lib/ai/providers';
 
-// Rate limiting cache
-const rateLimitCache = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_MINUTE = 10;
-
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const userLimit = rateLimitCache.get(userId);
-
-  if (!userLimit || now > userLimit.resetTime) {
-    rateLimitCache.set(userId, {
-      count: 1,
-      resetTime: now + RATE_LIMIT_WINDOW,
-    });
-    return true;
-  }
-
-  if (userLimit.count >= MAX_REQUESTS_PER_MINUTE) {
-    return false;
-  }
-
-  userLimit.count++;
-  return true;
+// Placeholder: Retrieve relevant Bible passages or commentary
+async function retrieveBibleContext(userMessage: string): Promise<string> {
+  // TODO: Replace with real DB/vector store lookup
+  // Example: query Postgres or pgvector for most relevant verses
+  return `Relevant Bible passages:\n- John 3:16\n- Psalm 23:1`;
 }
 
+// TransformStream to enforce guardrails
+function guardrailFilterStream(): TransformStream {
+  return new TransformStream({
+    transform(chunk, controller) {
+      const text = chunk?.content ?? '';
+
+      // Block unsafe or inappropriate content
+      const lowerText = text.toLowerCase();
+
+      // Basic guardrails for now - can expand how we do this later
+      if (
+        lowerText.includes('violence') ||
+        lowerText.includes('hate') ||
+        lowerText.includes('sex') ||
+        lowerText.includes('drugs') ||
+        lowerText.includes('self-harm') ||
+        lowerText.includes('suicide') ||
+        lowerText.includes('abuse') ||
+        lowerText.includes('explicit') ||
+        lowerText.includes('racist') ||
+        lowerText.includes('bully') ||
+        lowerText.includes('harass')
+      ) {
+        const text = chunk?.content ?? '';
+
+        // Example guardrail: block off-topic or unsafe outputs
+        if (text.toLowerCase().includes('violence')) {
+          controller.enqueue({
+            ...chunk,
+            content: '⚠️ Response blocked due to unsafe content.',
+          });
+        }
+      } else {
+        controller.enqueue(chunk);
+      }
+    },
+  });
+}
 
 export const maxDuration = 60;
 
@@ -120,21 +140,6 @@ export async function POST(request: Request) {
 
     const userType: UserType = session.user.type;
 
-    // Check rate limiting
-    if (!checkRateLimit(session.user.id)) {
-      return new Response(
-        JSON.stringify({
-          error: 'Rate limit exceeded',
-          message:
-            'Too many requests. Please wait a minute before trying again.',
-        }),
-        {
-          status: 429,
-          headers: { 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
     const messageCount = await getMessageCountByUserId({
       id: session.user.id,
       differenceInHours: 24,
@@ -143,7 +148,17 @@ export async function POST(request: Request) {
     if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
       return new ChatSDKError('rate_limit:chat').toResponse();
     }
+    // ----- RAG step: enrich with Bible context -----
+    const firstPart = message.parts[0];
+    const bibleContext =
+      firstPart.type === 'text'
+        ? await retrieveBibleContext(
+            (firstPart as { type: 'text'; text: string }).text,
+          )
+        : '';
 
+    // looks for chat by id - if not found,
+    // creates new chat with title generated from first user message
     const chat = await getChatById({ id });
 
     if (!chat) {
@@ -175,6 +190,7 @@ export async function POST(request: Request) {
       country,
     };
 
+    // Store user message
     await saveMessages({
       messages: [
         {
@@ -195,7 +211,7 @@ export async function POST(request: Request) {
       execute: ({ writer: dataStream }) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel as LanguageModelId),
-          system: systemPrompt(),
+          system: systemPrompt({ extraContext: bibleContext }),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
@@ -226,9 +242,9 @@ export async function POST(request: Request) {
         result.consumeStream();
 
         dataStream.merge(
-          result.toUIMessageStream({
-            sendReasoning: true,
-          }),
+          result
+            .toUIMessageStream({ sendReasoning: true })
+            .pipeThrough(guardrailFilterStream()),
         );
       },
       generateId: generateUUID,
