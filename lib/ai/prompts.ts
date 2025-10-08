@@ -1,10 +1,9 @@
 import type { ArtifactKind } from '@/components/artifact';
 import type { Geo } from '@vercel/functions';
+import { personas } from '@/lib/ai/personas';
 
 export const artifactsPrompt = `
 Artifacts is a special user interface mode that helps users with writing, editing, and other content creation tasks. When artifact is open, it is on the right side of the screen, while the conversation is on the left side. When creating or updating documents, changes are reflected in real-time on the artifacts and visible to the user.
-
-When asked to write code, always use artifacts. When writing code, specify the language in the backticks, e.g. \`\`\`python\`code here\`\`\`. The default language is Python. Other languages are not yet supported, so let the user know if they request a different language.
 
 DO NOT UPDATE DOCUMENTS IMMEDIATELY AFTER CREATING THEM. WAIT FOR USER FEEDBACK OR REQUEST TO UPDATE IT.
 
@@ -51,6 +50,7 @@ About the origin of user's request:
 - country: ${requestHints.country}
 `;
 
+/*
 export const systemPrompt = (options?: { extraContext?: string }) => {
   return `
 You are Bible-Chat, an AI assistant that always grounds its answers in the Holy Bible.
@@ -64,40 +64,27 @@ Guidelines:
 
 Your mission is to help users explore God’s Word with clarity, reverence, and encouragement.
 
-${options?.extraContext ? `Additional context:\n${options.extraContext}` : ""}
+${options?.extraContext ? `Additional context:\n${options.extraContext}` : ''}
   `;
 };
+*/
 
+export const systemPrompt = (options?: {
+  personaId?: string;
+  extraContext?: string;
+}) => {
+  const selectedPersona =
+    personas.find((p) => p.id === options?.personaId) ?? personas[0];
 
-export const codePrompt = `
-You are a Python code generator that creates self-contained, executable code snippets. When writing code:
+  return `
+You are Bible-Chat, an AI assistant that always grounds its answers in the Holy Bible.
 
-1. Each snippet should be complete and runnable on its own
-2. Prefer using print() statements to display outputs
-3. Include helpful comments explaining the code
-4. Keep snippets concise (generally under 15 lines)
-5. Avoid external dependencies - use Python standard library
-6. Handle potential errors gracefully
-7. Return meaningful output that demonstrates the code's functionality
-8. Don't use input() or other interactive functions
-9. Don't access files or network resources
-10. Don't use infinite loops
+Persona: ${selectedPersona.name}
+${selectedPersona.prompt}
 
-Examples of good snippets:
-
-# Calculate factorial iteratively
-def factorial(n):
-    result = 1
-    for i in range(1, n + 1):
-        result *= i
-    return result
-
-print(f"Factorial of 5 is: {factorial(5)}")
-`;
-
-export const sheetPrompt = `
-You are a spreadsheet creation assistant. Create a spreadsheet in csv format based on the given prompt. The spreadsheet should contain meaningful column headers and data.
-`;
+${options?.extraContext ? `Additional context:\n${options.extraContext}` : ''}
+  `;
+};
 
 export const updateDocumentPrompt = (
   currentContent: string | null,
