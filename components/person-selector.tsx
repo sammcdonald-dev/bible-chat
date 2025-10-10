@@ -1,12 +1,7 @@
 'use client';
 
-import {
-  useEffect,
-  useMemo,
-  useOptimistic,
-  useState,
-  startTransition,
-} from 'react';
+import { startTransition, useMemo, useOptimistic, useState } from 'react';
+
 import { saveChatModelAsCookie } from '@/app/(chat)/actions';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,12 +10,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { chatModels } from '@/lib/ai/models';
 import { cn } from '@/lib/utils';
+
 import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import type { Session } from 'next-auth';
-import { chatModels } from '@/lib/ai/models';
-import type { ChatModel } from '@/lib/ai/models';
 
 export function PersonSelector({
   session,
@@ -28,37 +23,24 @@ export function PersonSelector({
   className,
 }: {
   session: Session;
-  selectedModelId?: string;
+  selectedModelId: string;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
   const [optimisticModelId, setOptimisticModelId] =
     useOptimistic(selectedModelId);
 
-  const userType = session?.user.type;
+  const userType = session.user.type;
   const { availableChatModelIds } = entitlementsByUserType[userType];
 
   const availableChatModels = chatModels.filter((chatModel) =>
     availableChatModelIds.includes(chatModel.id),
   );
 
-  // 👇 Choose your default model ID here (e.g., "aurora")
-  const defaultModelId = 'aurora';
-
-  // Set default model if none selected yet
-  useEffect(() => {
-    if (!optimisticModelId) {
-      startTransition(() => {
-        setOptimisticModelId(defaultModelId);
-        saveChatModelAsCookie(defaultModelId);
-      });
-    }
-  }, [optimisticModelId]);
-
   const selectedChatModel = useMemo(
     () =>
       availableChatModels.find(
         (chatModel) => chatModel.id === optimisticModelId,
-      ) ?? availableChatModels.find((m) => m.id === defaultModelId),
+      ),
     [optimisticModelId, availableChatModels],
   );
 
@@ -73,8 +55,8 @@ export function PersonSelector({
       >
         <Button
           data-testid="model-selector"
-          variant="outline"
-          className="md:px-2 md:h-[34px]"
+          variant="ghost"
+          className="px-2 md:h-[34px] w-full justify-between"
         >
           {selectedChatModel?.name}
           <ChevronDownIcon />

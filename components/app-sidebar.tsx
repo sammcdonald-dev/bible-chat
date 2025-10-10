@@ -65,11 +65,13 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <SidebarHistory user={user} />
-        <PersonSelector
-          session={session}
-          selectedModelId={selectedModelId}
-          className="order-1 md:order-2"
-        />
+        <div className="px-2">
+          <PersonSelector
+            session={session}
+            selectedModelId={selectedModelId} // in the future the default will be bible-chat
+            className="order-2"
+          />
+        </div>
       </SidebarContent>
       <SidebarFooter>{user && <SidebarUserNav user={user} />}</SidebarFooter>
     </Sidebar>

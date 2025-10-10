@@ -24,7 +24,11 @@ export default async function Layout({
       />
       <DataStreamProvider>
         <SidebarProvider defaultOpen={!isCollapsed}>
-          <AppSidebar user={session?.user} session={session} />
+          <AppSidebar
+            user={session?.user}
+            session={session}
+            selectedModelId={'chat-model'}
+          />
           <SidebarInset>{children}</SidebarInset>
         </SidebarProvider>
       </DataStreamProvider>
