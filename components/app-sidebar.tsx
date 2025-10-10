@@ -1,6 +1,5 @@
 'use client';
 
-import type { User } from 'next-auth';
 import { useRouter } from 'next/navigation';
 
 import { PlusIcon } from '@/components/icons';
@@ -15,10 +14,16 @@ import {
   SidebarMenu,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { PersonSelector } from '@/components/person-selector';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import type { User, Session } from 'next-auth';
 
-export function AppSidebar({ user }: { user: User | undefined }) {
+export function AppSidebar({
+  user,
+  session,
+  selectedModelId,
+}: { user: User | undefined; session: Session; selectedModelId: string }) {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
 
@@ -60,6 +65,11 @@ export function AppSidebar({ user }: { user: User | undefined }) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarHistory user={user} />
+        <PersonSelector
+          session={session}
+          selectedModelId={selectedModelId}
+          className="order-1 md:order-2"
+        />
       </SidebarContent>
       <SidebarFooter>{user && <SidebarUserNav user={user} />}</SidebarFooter>
     </Sidebar>
