@@ -27,7 +27,7 @@ export default async function Layout({
       />
       <DataStreamProvider>
         <SidebarProvider defaultOpen={!isCollapsed}>
-          {chatModelFromCookie && session?.user ? (
+          {chatModelFromCookie ? (
             <AppSidebar
               user={session?.user}
               session={session}
