@@ -34,6 +34,7 @@ import {
 } from 'resumable-stream';
 import { after } from 'next/server';
 import { ChatSDKError } from '@/lib/errors';
+import { personas } from '@/lib/ai/personas';
 import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
@@ -125,11 +126,13 @@ export async function POST(request: Request) {
       message,
       selectedChatModel,
       selectedVisibilityType,
+      personaId,
     }: {
       id: string;
       message: ChatMessage;
       selectedChatModel: ChatModel['id'];
       selectedVisibilityType: VisibilityType;
+      personaId?: string;
     } = requestBody;
 
     const session = await auth();
@@ -207,11 +210,21 @@ export async function POST(request: Request) {
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });
 
+    const selectedPersona = personaId
+      ? personas.find((p) => p.id === personaId)
+      : undefined;
+
+    const personaPrompt = selectedPersona
+      ? `${selectedPersona.name} — ${selectedPersona.description}\n${selectedPersona.prompt}`
+      : '';
+
     const stream = createUIMessageStream({
       execute: ({ writer: dataStream }) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel as LanguageModelId),
-          system: systemPrompt({ extraContext: bibleContext }),
+          system: systemPrompt({
+            extraContext: `${bibleContext}\n${personaPrompt}`,
+          }),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
