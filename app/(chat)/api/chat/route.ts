@@ -34,7 +34,7 @@ import {
 } from 'resumable-stream';
 import { after } from 'next/server';
 import { ChatSDKError } from '@/lib/errors';
-import { personas } from '@/lib/ai/personas';
+import { type Persona, personas } from '@/lib/ai/personas';
 import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
@@ -127,12 +127,14 @@ export async function POST(request: Request) {
       selectedChatModel,
       selectedVisibilityType,
       personaId,
+      selectedPersonaId,
     }: {
       id: string;
       message: ChatMessage;
       selectedChatModel: ChatModel['id'];
       selectedVisibilityType: VisibilityType;
       personaId?: string;
+      selectedPersonaId?: Persona['id'];
     } = requestBody;
 
     const session = await auth();
