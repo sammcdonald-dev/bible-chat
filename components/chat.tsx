@@ -27,6 +27,7 @@ export function Chat({
   id,
   initialMessages,
   initialChatModel,
+  initialPersonaId,
   initialVisibilityType,
   isReadonly,
   session,
@@ -35,6 +36,7 @@ export function Chat({
   id: string;
   initialMessages: ChatMessage[];
   initialChatModel: string;
+  initialPersonaId: string;
   initialVisibilityType: VisibilityType;
   isReadonly: boolean;
   session: Session;
@@ -73,6 +75,7 @@ export function Chat({
             message: messages.at(-1),
             selectedChatModel: initialChatModel,
             selectedVisibilityType: visibilityType,
+            selectedPersonaId: initialPersonaId,
             ...body,
           },
         };
