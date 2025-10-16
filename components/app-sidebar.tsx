@@ -22,8 +22,8 @@ import type { User, Session } from 'next-auth';
 export function AppSidebar({
   user,
   session,
-  selectedModelId,
-}: { user: User | undefined; session: Session; selectedModelId: string }) {
+  selectedPersonaId,
+}: { user: User | undefined; session: Session; selectedPersonaId: string }) {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
 
@@ -68,7 +68,7 @@ export function AppSidebar({
         <div className="px-2">
           <PersonSelector
             session={session}
-            selectedModelId={selectedModelId} // in the future the default will be bible-chat
+            selectedPersonaId={selectedPersonaId} // in the future the default will be bible-chat
             className="order-2"
           />
         </div>

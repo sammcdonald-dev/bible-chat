@@ -21,12 +21,10 @@ import { personas } from '@/lib/ai/personas';
 
 export function PersonSelector({
   session,
-  selectedModelId,
   selectedPersonaId,
   className,
 }: {
   session: Session;
-  selectedModelId: string;
   selectedPersonaId: string;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
@@ -65,7 +63,7 @@ export function PersonSelector({
         )}
       >
         <Button
-          data-testid="model-selector"
+          data-testid="persona-selector"
           variant="ghost"
           className="px-2 md:h-[34px] w-full justify-between"
         >
@@ -79,7 +77,7 @@ export function PersonSelector({
 
           return (
             <DropdownMenuItem
-              data-testid={`model-selector-item-${id}`}
+              data-testid={`persona-selector-item-${id}`}
               key={id}
               onSelect={() => {
                 setOpen(false);
@@ -94,11 +92,11 @@ export function PersonSelector({
             >
               <button
                 type="button"
-                className="gap-4 group/item flex flex-row justify-between items-center w-full"
+                className="gap-4 group/item flex flex-row justify-between items-center w-full line-clamp-1 max-w-[300px]"
               >
                 <div className="flex flex-col gap-1 items-start">
                   <div>{persona.name}</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground text-left line-clamp-1">
                     {persona.description}
                   </div>
                 </div>

@@ -5,6 +5,8 @@ of personas that could be useful for a Bible chat application.
 We can decide on the final set later, but this is a start.
 */
 
+export const DEFAULT_BIBLE_CHAT_PERSONA_ID: string = 'bible-chat';
+
 export interface Persona {
   id: string;
   name: string;
