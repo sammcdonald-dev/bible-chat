@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 
 import { Chat } from '@/components/chat';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
+import { DEFAULT_BIBLE_CHAT_PERSONA_ID } from '@/lib/ai/personas';
 import { generateUUID } from '@/lib/utils';
 import { DataStreamHandler } from '@/components/data-stream-handler';
 import { auth } from '../(auth)/auth';
@@ -18,6 +19,7 @@ export default async function Page() {
 
   const cookieStore = await cookies();
   const modelIdFromCookie = cookieStore.get('chat-model');
+  const personaIdFromCookie = cookieStore.get('bible-chat');
 
   if (!modelIdFromCookie) {
     return (
@@ -27,6 +29,9 @@ export default async function Page() {
           id={id}
           initialMessages={[]}
           initialChatModel={DEFAULT_CHAT_MODEL}
+          initialPersonaId={
+            personaIdFromCookie?.value || DEFAULT_BIBLE_CHAT_PERSONA_ID
+          }
           initialVisibilityType="private"
           isReadonly={false}
           session={session}
@@ -44,6 +49,9 @@ export default async function Page() {
         id={id}
         initialMessages={[]}
         initialChatModel={modelIdFromCookie.value}
+        initialPersonaId={
+          personaIdFromCookie?.value || DEFAULT_BIBLE_CHAT_PERSONA_ID
+        }
         initialVisibilityType="private"
         isReadonly={false}
         session={session}

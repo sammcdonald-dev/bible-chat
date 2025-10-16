@@ -34,11 +34,18 @@ import {
 } from 'resumable-stream';
 import { after } from 'next/server';
 import { ChatSDKError } from '@/lib/errors';
-import { type Persona, personas } from '@/lib/ai/personas';
+import { DEFAULT_BIBLE_CHAT_PERSONA_ID, personas } from '@/lib/ai/personas';
 import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
 import type { LanguageModelId } from '@/lib/ai/providers';
+import { cookies } from 'next/headers';
+
+// Get selected persona from cookie
+async function getSelectedPersonaId(): Promise<string | undefined> {
+  const cookieStore = await cookies();
+  return cookieStore.get('bible-chat')?.value;
+}
 
 // Placeholder: Retrieve relevant Bible passages or commentary
 async function retrieveBibleContext(userMessage: string): Promise<string> {
@@ -126,15 +133,13 @@ export async function POST(request: Request) {
       message,
       selectedChatModel,
       selectedVisibilityType,
-      personaId,
       selectedPersonaId,
     }: {
       id: string;
       message: ChatMessage;
       selectedChatModel: ChatModel['id'];
       selectedVisibilityType: VisibilityType;
-      personaId?: string;
-      selectedPersonaId?: Persona['id'];
+      selectedPersonaId?: string;
     } = requestBody;
 
     const session = await auth();
@@ -212,9 +217,12 @@ export async function POST(request: Request) {
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });
 
+    // Get selected persona from request body or fallback to cookie
+    const personaId = selectedPersonaId || (await getSelectedPersonaId());
+
     const selectedPersona = personaId
       ? personas.find((p) => p.id === personaId)
-      : undefined;
+      : personas.find((p) => p.id === DEFAULT_BIBLE_CHAT_PERSONA_ID);
 
     const personaPrompt = selectedPersona
       ? `${selectedPersona.name} — ${selectedPersona.description}\n${selectedPersona.prompt}`

@@ -16,8 +16,8 @@ export interface Persona {
 
 export const personas: Persona[] = [
   {
-    id: 'bible-scholar',
-    name: 'Bible Scholar',
+    id: 'bible-chat',
+    name: `✝️ Bible Chat`,
     description:
       'Deep contextual analysis of scripture, historical background, and theology.',
     prompt: `

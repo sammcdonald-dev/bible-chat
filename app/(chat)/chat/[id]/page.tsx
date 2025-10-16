@@ -6,6 +6,7 @@ import { Chat } from '@/components/chat';
 import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 import { DataStreamHandler } from '@/components/data-stream-handler';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
+import { DEFAULT_BIBLE_CHAT_PERSONA_ID } from '@/lib/ai/personas';
 import { convertToUIMessages } from '@/lib/utils';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
@@ -41,6 +42,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
   const cookieStore = await cookies();
   const chatModelFromCookie = cookieStore.get('chat-model');
+  const personaIdFromCookie = cookieStore.get('bible-chat');
 
   if (!chatModelFromCookie) {
     return (
@@ -49,6 +51,9 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           id={chat.id}
           initialMessages={uiMessages}
           initialChatModel={DEFAULT_CHAT_MODEL}
+          initialPersonaId={
+            personaIdFromCookie?.value || DEFAULT_BIBLE_CHAT_PERSONA_ID
+          }
           initialVisibilityType={chat.visibility}
           isReadonly={session?.user?.id !== chat.userId}
           session={session}
@@ -65,6 +70,9 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         id={chat.id}
         initialMessages={uiMessages}
         initialChatModel={chatModelFromCookie.value}
+        initialPersonaId={
+          personaIdFromCookie?.value || DEFAULT_BIBLE_CHAT_PERSONA_ID
+        }
         initialVisibilityType={chat.visibility}
         isReadonly={session?.user?.id !== chat.userId}
         session={session}
