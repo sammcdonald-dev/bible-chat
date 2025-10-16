@@ -9,10 +9,16 @@ import {
 } from '@/lib/db/queries';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { myProvider } from '@/lib/ai/providers';
+import type { Persona } from '@/lib/ai/personas';
 
 export async function saveChatModelAsCookie(model: string) {
   const cookieStore = await cookies();
   cookieStore.set('chat-model', model);
+}
+
+export async function saveChatPersonaAsCookie(persona: Persona['id']) {
+  const cookieStore = await cookies();
+  cookieStore.set('bible-chat', persona);
 }
 
 export async function generateTitleFromUserMessage({

@@ -2,7 +2,8 @@
 
 import { startTransition, useMemo, useOptimistic, useState } from 'react';
 
-import { saveChatModelAsCookie } from '@/app/(chat)/actions';
+import { saveChatPersonaAsCookie } from '@/app/(chat)/actions';
+
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -16,32 +17,42 @@ import { cn } from '@/lib/utils';
 import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import type { Session } from 'next-auth';
+import { personas } from '@/lib/ai/personas';
 
 export function PersonSelector({
   session,
   selectedModelId,
+  selectedPersonaId,
   className,
 }: {
   session: Session;
   selectedModelId: string;
+  selectedPersonaId: string;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
-  const [optimisticModelId, setOptimisticModelId] =
-    useOptimistic(selectedModelId);
+  // const [optimisticModelId, setOptimisticModelId] =
+  //   useOptimistic(selectedModelId);
+
+  const [optimisticPersonaId, setOptimisticPersonaId] =
+    useOptimistic(selectedPersonaId);
 
   const userType = session.user.type;
-  const { availableChatModelIds } = entitlementsByUserType[userType];
+  // const { availableChatModelIds } = entitlementsByUserType[userType];
 
-  const availableChatModels = chatModels.filter((chatModel) =>
-    availableChatModelIds.includes(chatModel.id),
-  );
+  // const availableChatModels = chatModels.filter((chatModel) =>
+  //   availableChatModelIds.includes(chatModel.id),
+  // );
 
-  const selectedChatModel = useMemo(
-    () =>
-      availableChatModels.find(
-        (chatModel) => chatModel.id === optimisticModelId,
-      ),
-    [optimisticModelId, availableChatModels],
+  // const selectedChatModel = useMemo(
+  //   () =>
+  //     availableChatModels.find(
+  //       (chatModel) => chatModel.id === optimisticModelId,
+  //     ),
+  //   [optimisticModelId, availableChatModels],
+  // );
+  const selectedPersona = useMemo(
+    () => personas.find((persona) => persona.id === optimisticPersonaId),
+    [optimisticPersonaId],
   );
 
   return (
@@ -58,13 +69,13 @@ export function PersonSelector({
           variant="ghost"
           className="px-2 md:h-[34px] w-full justify-between"
         >
-          {selectedChatModel?.name}
+          {selectedPersona?.name}
           <ChevronDownIcon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[300px]">
-        {availableChatModels.map((chatModel) => {
-          const { id } = chatModel;
+        {personas.map((persona) => {
+          const { id } = persona;
 
           return (
             <DropdownMenuItem
@@ -74,11 +85,11 @@ export function PersonSelector({
                 setOpen(false);
 
                 startTransition(() => {
-                  setOptimisticModelId(id);
-                  saveChatModelAsCookie(id);
+                  setOptimisticPersonaId(id);
+                  saveChatPersonaAsCookie(id);
                 });
               }}
-              data-active={id === optimisticModelId}
+              data-active={id === optimisticPersonaId}
               asChild
             >
               <button
@@ -86,9 +97,9 @@ export function PersonSelector({
                 className="gap-4 group/item flex flex-row justify-between items-center w-full"
               >
                 <div className="flex flex-col gap-1 items-start">
-                  <div>{chatModel.name}</div>
+                  <div>{persona.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {chatModel.description}
+                    {persona.description}
                   </div>
                 </div>
 
