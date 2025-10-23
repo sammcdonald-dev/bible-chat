@@ -43,6 +43,7 @@ function PureMessages({
   });
 
   useDataStream();
+  console.log(selectedPersonaId);
 
   return (
     <div
@@ -74,7 +75,9 @@ function PureMessages({
 
       {status === 'submitted' &&
         messages.length > 0 &&
-        messages[messages.length - 1].role === 'user' && <ThinkingMessage />}
+        messages[messages.length - 1].role === 'user' && (
+          <ThinkingMessage selectedPersonaId={selectedPersonaId} />
+        )}
 
       <motion.div
         ref={messagesEndRef}

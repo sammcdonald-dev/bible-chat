@@ -71,10 +71,10 @@ const PurePreviewMessage = ({
           )}
         >
           {message.role === 'assistant' && (
-            <div className="size-12 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background">
+            <div className="size-16 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background">
               <div className="translate-y-px">
                 {selectedPersonaId !== 'bible-chat' ? (
-                  <PersonaIcon params={selectedPersonaId} />
+                  <PersonaIcon selectedPersonaId={selectedPersonaId} />
                 ) : (
                   <SparklesIcon size={18} />
                 )}
@@ -345,7 +345,9 @@ export const PreviewMessage = memo(
   },
 );
 
-export const ThinkingMessage = () => {
+export const ThinkingMessage = ({
+  selectedPersonaId,
+}: { selectedPersonaId: string }) => {
   const role = 'assistant';
 
   return (
@@ -364,8 +366,12 @@ export const ThinkingMessage = () => {
           },
         )}
       >
-        <div className="size-12 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
-          <SparklesIcon size={18} />
+        <div className="size-16 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
+          {selectedPersonaId !== 'bible-chat' ? (
+            <PersonaIcon selectedPersonaId={selectedPersonaId} />
+          ) : (
+            <SparklesIcon size={18} />
+          )}
         </div>
 
         <div className="flex flex-col gap-2 w-full">

@@ -19,17 +19,19 @@ export const BotIcon = () => {
   );
 };
 
-export function PersonaIcon({ params }: { params?: any }) {
+export function PersonaIcon({
+  selectedPersonaId,
+}: { selectedPersonaId: string }) {
   return (
-    <>
-      <Image
-        src={`/personas/${params?.id}.png`}
-        alt={`${params?.name} Icon`}
-        width={16}
-        height={16}
-        className="size-full object-contain"
+    <div className="size-16 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background object-cover">
+      <img
+        src={`/personas/${selectedPersonaId}.png`}
+        width={200}
+        height={200}
+        alt={`${selectedPersonaId} Icon`}
+        className="size-full rounded-full object-cover justify-center flex"
       />
-    </>
+    </div>
   );
 }
 
