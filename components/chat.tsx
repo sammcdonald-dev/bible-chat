@@ -142,6 +142,7 @@ export function Chat({
 
         <Messages
           chatId={id}
+          selectedPersonaId={initialPersonaId}
           status={status}
           votes={votes}
           messages={messages}
