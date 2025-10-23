@@ -75,7 +75,7 @@ function PureMessages({
 
       <motion.div
         ref={messagesEndRef}
-        className="shrink-0 min-w-[24px] min-h-[24px]"
+        className="shrink-0 min-w-[30px] min-h-[30px]"
         onViewportLeave={onViewportLeave}
         onViewportEnter={onViewportEnter}
       />
