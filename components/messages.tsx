@@ -11,6 +11,7 @@ import { useDataStream } from './data-stream-provider';
 
 interface MessagesProps {
   chatId: string;
+  selectedPersonaId: string;
   status: UseChatHelpers<ChatMessage>['status'];
   votes: Array<Vote> | undefined;
   messages: ChatMessage[];
@@ -22,6 +23,7 @@ interface MessagesProps {
 
 function PureMessages({
   chatId,
+  selectedPersonaId,
   status,
   votes,
   messages,
@@ -53,6 +55,7 @@ function PureMessages({
         <PreviewMessage
           key={message.id}
           chatId={chatId}
+          selectedPersonaId={selectedPersonaId}
           message={message}
           isLoading={status === 'streaming' && messages.length - 1 === index}
           vote={
