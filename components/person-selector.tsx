@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { startTransition, useMemo, useOptimistic, useState } from 'react';
+import { startTransition, use, useMemo, useOptimistic, useState } from 'react';
 
 import { saveChatPersonaAsCookie } from '@/app/(chat)/actions';
 
@@ -21,6 +21,7 @@ import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import type { Session } from 'next-auth';
 import { personas } from '@/lib/ai/personas';
 import { Icon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export function PersonSelector({
   session,
@@ -31,6 +32,7 @@ export function PersonSelector({
   selectedPersonaId: string;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
 
   const [optimisticPersonaId, setOptimisticPersonaId] =
     useOptimistic(selectedPersonaId);
@@ -80,7 +82,6 @@ export function PersonSelector({
               key={id}
               onSelect={() => {
                 setOpen(false);
-
                 startTransition(() => {
                   setOptimisticPersonaId(id);
                   saveChatPersonaAsCookie(id);
@@ -92,6 +93,10 @@ export function PersonSelector({
               <button
                 type="button"
                 className="gap-4 group/item flex flex-row justify-between items-center w-full line-clamp-1 max-w-[300px]"
+                onClick={() => {
+                  router.push('/');
+                  router.refresh();
+                }}
               >
                 <div className="flex flex-col gap-1 items-start">
                   <div className="flex flex-row gap-2 items-center text-left">
