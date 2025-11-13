@@ -85,11 +85,13 @@ export async function saveChat({
   userId,
   title,
   visibility,
+  personaId,
 }: {
   id: string;
   userId: string;
   title: string;
   visibility: VisibilityType;
+  personaId: string;
 }) {
   try {
     return await db.insert(chat).values({
@@ -98,6 +100,7 @@ export async function saveChat({
       userId,
       title,
       visibility,
+      personaId,
     });
   } catch (error) {
     throw new ChatSDKError('bad_request:database', 'Failed to save chat');
@@ -128,34 +131,50 @@ export async function getChatsByUserId({
   limit,
   startingAfter,
   endingBefore,
+  personaId,
 }: {
   id: string;
   limit: number;
   startingAfter: string | null;
   endingBefore: string | null;
+  personaId?: string;
 }) {
   try {
     const extendedLimit = limit + 1;
 
-    const query = (whereCondition?: SQL<any>) =>
-      db
+    const query = (whereCondition?: SQL<any>) => {
+      const conditions: SQL<any>[] = [eq(chat.userId, id)];
+
+      if (personaId) {
+        conditions.push(eq(chat.personaId, personaId));
+      }
+
+      if (whereCondition) {
+        conditions.push(whereCondition);
+      }
+
+      return db
         .select()
         .from(chat)
-        .where(
-          whereCondition
-            ? and(whereCondition, eq(chat.userId, id))
-            : eq(chat.userId, id),
-        )
+        .where(and(...conditions))
         .orderBy(desc(chat.createdAt))
         .limit(extendedLimit);
+    };
 
     let filteredChats: Array<Chat> = [];
 
     if (startingAfter) {
+      const chatConditions: SQL<any>[] = [
+        eq(chat.id, startingAfter),
+        eq(chat.userId, id),
+      ];
+      if (personaId) {
+        chatConditions.push(eq(chat.personaId, personaId));
+      }
       const [selectedChat] = await db
         .select()
         .from(chat)
-        .where(eq(chat.id, startingAfter))
+        .where(and(...chatConditions))
         .limit(1);
 
       if (!selectedChat) {
@@ -167,10 +186,17 @@ export async function getChatsByUserId({
 
       filteredChats = await query(gt(chat.createdAt, selectedChat.createdAt));
     } else if (endingBefore) {
+      const chatConditions: SQL<any>[] = [
+        eq(chat.id, endingBefore),
+        eq(chat.userId, id),
+      ];
+      if (personaId) {
+        chatConditions.push(eq(chat.personaId, personaId));
+      }
       const [selectedChat] = await db
         .select()
         .from(chat)
-        .where(eq(chat.id, endingBefore))
+        .where(and(...chatConditions))
         .limit(1);
 
       if (!selectedChat) {
