@@ -167,6 +167,15 @@ export async function POST(request: Request) {
           )
         : '';
 
+    // Get selected persona from request body or fallback to cookie
+    const personaId = selectedPersonaId || (await getSelectedPersonaId());
+
+    const selectedPersona = personaId
+      ? personas.find((p) => p.id === personaId)
+      : personas.find((p) => p.id === DEFAULT_BIBLE_CHAT_PERSONA_ID);
+
+    const finalPersonaId = selectedPersona?.id || DEFAULT_BIBLE_CHAT_PERSONA_ID;
+
     // looks for chat by id - if not found,
     // creates new chat with title generated from first user message
     const chat = await getChatById({ id });
@@ -181,6 +190,7 @@ export async function POST(request: Request) {
         userId: session.user.id,
         title,
         visibility: selectedVisibilityType,
+        personaId: finalPersonaId,
       });
     } else {
       if (chat.userId !== session.user.id) {
@@ -216,13 +226,6 @@ export async function POST(request: Request) {
 
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });
-
-    // Get selected persona from request body or fallback to cookie
-    const personaId = selectedPersonaId || (await getSelectedPersonaId());
-
-    const selectedPersona = personaId
-      ? personas.find((p) => p.id === personaId)
-      : personas.find((p) => p.id === DEFAULT_BIBLE_CHAT_PERSONA_ID);
 
     const personaPrompt = selectedPersona
       ? `${selectedPersona.name} — ${selectedPersona.description}\n${selectedPersona.prompt}`
