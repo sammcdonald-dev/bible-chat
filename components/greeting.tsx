@@ -15,7 +15,8 @@ export const Greeting = ({
         transition={{ delay: 0.5 }}
         className="text-2xl font-semibold"
       >
-        Hello there! I'm {selectedPersonaId}
+        Hello there! I&apos;m{' '}
+        {selectedPersonaId.charAt(0).toUpperCase() + selectedPersonaId.slice(1)}
       </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
