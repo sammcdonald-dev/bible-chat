@@ -17,15 +17,38 @@ export const user = pgTable('User', {
   password: varchar('password', { length: 64 }),
 });
 
+import {
+  //pgTable,
+  serial,
+  //varchar,
+  integer,
+  //text,
+  //timestamp,
+} from 'drizzle-orm/pg-core';
+import { vector } from 'drizzle-orm/pg-core'; // <-- IMPORTANT
+
+export const bibleVerses = pgTable('bible_verses', {
+  id: serial('id').primaryKey(),
+  book: varchar('book', { length: 50 }).notNull(),
+  chapter: integer('chapter').notNull(),
+  verse: integer('verse').notNull(),
+  text: text('text').notNull(),
+
+  // pgvector embedding (768 dimensions)
+  embedding: vector('embedding', { dimensions: 768 }),
+
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 export type User = InferSelectModel<typeof user>;
 
 export const chat = pgTable('Chat', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
   createdAt: timestamp('createdAt').notNull(),
   title: text('title').notNull(),
-  userId: uuid('userId')
-    .notNull()
-    .references(() => user.id),
+  userId: uuid('userId'),
+  // .notNull()
+  // .references(() => user.id),
   visibility: varchar('visibility', { enum: ['public', 'private'] })
     .notNull()
     .default('private'),
@@ -112,9 +135,9 @@ export const document = pgTable(
     kind: varchar('text', { enum: ['text', 'code', 'image', 'sheet'] })
       .notNull()
       .default('text'),
-    userId: uuid('userId')
-      .notNull()
-      .references(() => user.id),
+    userId: uuid('userId'),
+    // .notNull()
+    // .references(() => user.id),
   },
   (table) => {
     return {
@@ -135,9 +158,9 @@ export const suggestion = pgTable(
     suggestedText: text('suggestedText').notNull(),
     description: text('description'),
     isResolved: boolean('isResolved').notNull().default(false),
-    userId: uuid('userId')
-      .notNull()
-      .references(() => user.id),
+    userId: uuid('userId'),
+    // .notNull()
+    // .references(() => user.id),
     createdAt: timestamp('createdAt').notNull(),
   },
   (table) => ({
