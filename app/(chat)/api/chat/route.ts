@@ -14,6 +14,7 @@ import {
   getChatById,
   getMessageCountByUserId,
   getMessagesByChatId,
+  getUserPromptCount,
   saveChat,
   saveMessages,
 } from '@/lib/db/queries';
@@ -149,7 +150,17 @@ export async function POST(request: Request) {
     }
 
     const userType: UserType = session.user.type;
+    const isGuest = userType === 'guest';
 
+    if (isGuest) {
+      // For guest users, check total prompt count (limit: 8)
+      const promptCount = await getUserPromptCount({ id: session.user.id });
+      if (promptCount >= 8) {
+        return new ChatSDKError('rate_limit:auth').toResponse();
+      }
+    }
+
+    // For regular users, check daily message limit
     const messageCount = await getMessageCountByUserId({
       id: session.user.id,
       differenceInHours: 24,
