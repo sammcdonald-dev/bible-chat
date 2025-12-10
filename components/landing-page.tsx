@@ -48,7 +48,7 @@ export default function LandingPage({ session }: { session: Session | null }) {
             Engage in meaningful conversations with biblical personalities and
             deepen your understanding of Scripture through interactive dialogue.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             {session ? (
               <Button asChild size="lg" className="text-lg px-8 py-6">
                 <Link href="/">Continue Chatting</Link>
@@ -108,6 +108,28 @@ export default function LandingPage({ session }: { session: Session | null }) {
               </Card>
             ))}
           </div>
+        </div>
+        <div className="max-w-4xl mx-auto text-center mt-24">
+          <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Try Our AI Powered Scripture Study Tool!
+          </h2>
+          <p className="text-muted-foreground max-w-xl text-xl md:text-2xl mx-auto mb-8">
+            Our AI Powered Bible Study Tool uses the latest in AI technology to
+            help you Study the Bible with ease. Explore verses like never
+            before.
+            <hr className="my-4" />
+            Dive into other translations, commentaries, and historical context
+            to gain a deeper understanding of the Bible.
+          </p>
+          {session ? (
+            <Button asChild size="lg" className="text-lg px-8 py-6">
+              <Link href="/bible-study">Continue Studying</Link>
+            </Button>
+          ) : (
+            <Button asChild size="lg" className="text-lg px-8 py-6">
+              <Link href="/">Start Studying</Link>
+            </Button>
+          )}
         </div>
 
         {/* Features Section */}

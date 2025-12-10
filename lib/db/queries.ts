@@ -526,6 +526,24 @@ export async function getMessageCountByUserId({
   }
 }
 
+export async function getUserPromptCount({ id }: { id: string }) {
+  try {
+    const [stats] = await db
+      .select({ count: count(message.id) })
+      .from(message)
+      .innerJoin(chat, eq(message.chatId, chat.id))
+      .where(and(eq(chat.userId, id), eq(message.role, 'user')))
+      .execute();
+
+    return stats?.count ?? 0;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get user prompt count',
+    );
+  }
+}
+
 export async function createStreamId({
   streamId,
   chatId,
